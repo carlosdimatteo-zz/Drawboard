@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="js/jquery.js"></script>
+    <title>Drawboard</title>
+</head>
+<body class="grey">
+    <div class="container">
+            <div class="row">
+                    <div class="col l2 "> 
+                    <br><br><br>
+                    <p id="inbox">inbox:</p>  </div>
+                    <div class="col l8 m12 s12 center">
+                        <h1 class="center">Pizarra compartida</h1> 
+                        <div class="center">
+                        <button type="button" class="btn waves-effect center" onclick="connect()"id="conectar">conectar</button>
+                         <button type="button" class="btn waves-effect center" onclick="closeWs()"id="desconectar">Desconectar</button>
+                         
+                        </div>
+                    </div>
+                    <div class="col l2 m0 s0"></div>
+            </div>
+            <div class="row">
+                    <div class="col l2 m0 s0"></div>
+                    <div class="col l8 m12 s12 center">
+                        <canvas id="canvas" width="200px" height="200px" style="background-color:white;border-style:solid;border-color:sienna; border-radius:35px"></canvas>
+                    </div>
+                    <div class="col l2 m0 s0"></div>
+            </div>
+            <div class="row">
+                <div class="col l2"></div>
+                <div class="col l8 m12 s12 center">
+                    <div class="center">
+                    <button type="button" class="btn waves-effect center " onclick="sendMessage()" id="enviar">Enviar</button>
+                    </div>
+                </div>
+                <div class="col l2"></div>
+            </div>
+    </div>
+    <script>
+	 var myCanvas2 = document.getElementById("canvas");
+                j={};
+                if(myCanvas2){
+                                var isDown      = false;
+                                var ctx2 = myCanvas2.getContext("2d");
+                                var canvas2X, canvas2Y;
+                                ctx2.lineWidth = 5;
+                                 
+                                $(myCanvas2)
+                                .mousedown(function(e){
+                                                isDown = true;
+                                                ctx2.beginPath();
+                                                canvas2X = e.pageX - myCanvas2.offsetLeft;
+                                                canvas2Y = e.pageY - myCanvas2.offsetTop;
+                                                ctx2.moveTo(canvas2X, canvas2Y);
+                                })
+                                .mousemove(function(e){
+                                                if(isDown != false) {
+                                                        canvas2X = e.pageX - myCanvas2.offsetLeft;
+                                                        canvas2Y = e.pageY - myCanvas2.offsetTop;
+                                                        ctx2.lineTo(canvas2X, canvas2Y);
+                                                        ctx2.strokeStyle = "black";
+                                                        ctx2.stroke();
+                                                        
+                                                }
+                                })
+                                .mouseup(function(e){
+                                                isDown = false;
+                                                ctx2.closePath();
+                                });
+                }
+                 
+            
+                 
+        </script>
+	
+	<script>
+	console.log(location.host);
+		/* function $(id) {
+			return document.getElementById(id);
+		}; */
+		var ws;
+			
+		function sendMessage() {
+				var url = document.getElementById("canvas").toDataURL();
+			//ws.send(url);
+		};
+		function closeWs() {
+			ws.close();
+		};
+		function connect() {
+			ws = new WebSocket("ws://" + location.host
+					+ "/Drawboard/Socket");
+			console.log("websocket created");
+			ws.onmessage = function(e) {
+				console.log(JSON.parse(e.data));
+				var j = JSON.parse(e.data);
+				var ctx=document.getElementById("canvas").getContext("2d");
+				//ctx.drawImage(image,0,0);
+				ctx2.lineTo(j.x, j.y);
+                ctx2.strokeStyle = j.color;
+                ctx2.stroke();
+				
+			};
+
+			ws.onopen = function(e) {
+				document.getElementById("inbox").textContent += "\n Conection Success";
+				console.log("connected to websocket");
+			};
+
+			ws.onclose = function(e) {
+				if (ws.readyState === WebSocket.OPEN) {
+					document.getElementById("inbox").textContent += '\n Connection Finished';
+					console.log("connection finished");
+					ws.close();
+				}
+			};
+			ws.onerror = function(e) {
+				document.getElementById("inbox").textContent += '\n' +e.data;
+				console.log(e.data);
+			};
+
+		};
+	</script>
+
+<script src="js/materialize.min.js"></script>
+
+    </body>
+</html>

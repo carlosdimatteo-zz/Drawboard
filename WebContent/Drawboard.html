@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="ISO-8859-1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="js/jquery.js"></script>
+    <script src="js/jscolor.js"></script>
+    <script src="js/jscolor.min.js"></script>
+    <script src="js/materialize.min.js"></script>
+    <title>Drawboard</title>
+</head>
+<body class="white accent-3">
+    <div class="container">
+            <div class="row">
+                
+                    <div class="col l2 "> 
+                    <br><br><br>
+                    <p id="inbox">inbox:</p>  </div> 
+                    <div class="col l8 m12 s12 center">
+                        <h2 class="center">Pizarra compartida</h2> 
+                        <!-- <h6 class="">Ingresa tu nombre</h6> -->
+                        <div class="container">
+	                        <div class="center input-field">
+		                        <input type="text" id="nombre">
+		                        <label for="nombre">Ingresa tu Nombre</label>
+		                    </div>
+	                    </div>
+                        <br>
+                        <div class="center">
+                        <button type="button" class="btn waves-effect center" onclick="connect()">Conectar</button>
+                            <button type="button" class="btn waves-effect center" onclick="closeWs()">Desconectar</button>
+                        </div>
+                    </div>
+                    <div class="col l2 m0 s0"></div>
+                    
+            </div>
+            <div class="row">
+                    <div class="col l2 m0 s0"></div>
+                    <div class="col l8 m12 s12 center">
+                        <canvas id="canvas" width="500px" height="500px" style="background-color:white;border-style:solid;border-color:sienna; border-radius:35px"></canvas>
+                    </div>
+                    <div class="col l2 m0 s0"></div>
+            </div>
+            <div class="row">
+                <div class="col l2"></div>
+                <div class="col l8 m12 s12 center">
+                    <h6 class="">Escoge un Color</h6><br>
+                    <input class="jscolor" id="strokeColor">
+                    <div >
+                    <p id="usuarios"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                    <div class="col l2"></div>
+                    
+                </div>
+            <div class="row">
+                <div class="col l2"></div>
+                <div class="col l8 m12 s12 center">
+                    <div class="center">
+                    <!-- <button type="button" class="btn waves-effect center " onclick="sendMessage()" >Enviar</button> -->
+                    <button type="button" class="btn waves-effect center" id="clear">Limpiar Pizarra</button>
+                    </div>
+                </div>
+                <div class="col l2"></div>
+            </div>
+    </div>
+    <script>
+    var myCanvas2 = document.getElementById("canvas");
+    if(myCanvas2){
+        var isDown      = false;
+        var ctx2 = myCanvas2.getContext("2d");
+        var canvas2X, canvas2Y;
+        ctx2.lineWidth = 5;
+                                 
+        $(myCanvas2)
+        .mousedown(function(e){
+            isDown = true;
+            ctx2.beginPath();
+            canvas2X = e.pageX - myCanvas2.offsetLeft;
+            canvas2Y = e.pageY - myCanvas2.offsetTop;
+            ctx2.moveTo(canvas2X, canvas2Y);
+        })
+        .mousemove(function(e){
+            if(isDown != false) {
+                var color=$("strokeColor").value;
+                    canvas2X = e.pageX - myCanvas2.offsetLeft;
+                    canvas2Y = e.pageY - myCanvas2.offsetTop;
+                    ctx2.lineTo(canvas2X, canvas2Y);
+                    // ctx2.strokeStyle = "black";
+                    // ctx2.strokeStyle = "#"+((1<<24)*Math.random()|0).toString(16);
+                    ctx2.strokeStyle= "#"+color;
+                    console.log(ctx2.strokeStyle);
+                    ctx2.stroke();
+                     j.x=canvas2X;
+                     j.y=canvas2Y;
+                     j.color=ctx2.strokeStyle;
+                     ws.send(JSON.stringify(j));
+            }
+        })
+        .mouseup(function(e){
+            isDown = false;
+            ctx2.closePath();
+        });
+    }
+                 
+            
+                 
+        </script>
+	<script>
+	console.log(location.host);
+		function $(id) {
+			return document.getElementById(id);
+		};
+        var ws;
+        var limpiar = document.getElementById("clear");
+        limpiar.addEventListener("click",function(){
+            canvas.width=canvas.width;
+        },false);
+			
+		// function sendMessage() {
+		// 		var url = document.getElementById("canvas").toDataURL();
+		// 	ws.send(url);
+		// };
+		function closeWs() {
+			ws.close();
+		};
+		
+		function connect() {
+            console.log($('nombre').value);
+			ws = new WebSocket("ws://" + location.host + "/Drawboard/Socket/"+ $("nombre").value);
+			console.log("websocket created");
+			
+			ws.onmessage = function(e) {
+				console.log(JSON.parse(e.data));
+				if(JSON.parse(e.data).msg){
+					var mensaje =JSON.parse(e.data).msg;
+					console.log(mensaje)
+					document.getElementById("inbox").textContent += mensaje;
+				}
+				if(JSON.parse(e.data).users!=null){
+				var usuarios = JSON.parse(e.data).users;
+				console.log(usuarios);
+				document.getElementById("usuarios").innerHTML ="";
+                var j = JSON.parse(e.data);
+	       		  for (key in usuarios) { 
+	       			  document.getElementById("usuarios").innerHTML += `${usuarios[key]} esta en linea.<br>`; 
+	       		  }
+	       		}
+                
+				// document.getElementById("inbox").innerHTML += '\n' + JSON.parse(e.data).msg;
+				var j = JSON.parse(e.data);
+				ctx2.lineTo(j.x, j.y);
+                ctx2.strokeStyle = j.color;
+                ctx2.stroke();
+				
+            };
+			ws.onopen = function(e) {
+                $("inbox").textContent = '\n Conection Success';
+				// document.getElementById("inbox").textContent += "\n Conection Success";
+				console.log("connected to websocket");
+			};
+
+			ws.onclose = function(e) {
+				if (ws.readyState === WebSocket.OPEN) {
+					$("inbox").textContent = '\n Connection Finished';
+					console.log("connection finished");
+					ws.close();
+				}
+			};
+			ws.onerror = function(e) {
+				$("inbox").textContent += '\n' +e.data;
+            };
+            
+		};
+	</script>
+    </body>
+</html>
